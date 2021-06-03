@@ -10,9 +10,9 @@ public class UserMealWithExcess {
 
     private final int calories;
 
-    private final AtomicBoolean excess;  //Применил ссылочный тип - для выполнения задания за один проход - Optional 2
+    private final AtomicBoolean excess;  //Reference mutable type - for Optional 2
 
-        public UserMealWithExcess(LocalDateTime dateTime, String description, int calories, AtomicBoolean excess) {
+    public UserMealWithExcess(LocalDateTime dateTime, String description, int calories, AtomicBoolean excess) {
         this.dateTime = dateTime;
         this.description = description;
         this.calories = calories;

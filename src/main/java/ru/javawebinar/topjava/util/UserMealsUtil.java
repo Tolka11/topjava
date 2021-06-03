@@ -41,20 +41,17 @@ public class UserMealsUtil {
 
     // HW0 by Cycles
     public static List<UserMealWithExcess> filteredByCycles(List<UserMeal> meals, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
-        // Карта где подсчитываем калории за каждый день
         Map<LocalDate, Integer> mapCaloriesPerDay = new HashMap<>();
         for (UserMeal userMeal : meals) {
-            LocalDate date = userMeal.getDate();
-            mapCaloriesPerDay.put(date, userMeal.getCalories() + mapCaloriesPerDay.getOrDefault(date, 0));
+            LocalDate mealDate = userMeal.getDate();
+            mapCaloriesPerDay.put(mealDate, userMeal.getCalories() + mapCaloriesPerDay.getOrDefault(mealDate, 0));
         }
-        // Формируем лист на выдачу
         List<UserMealWithExcess> result = new ArrayList<>();
         for (UserMeal userMeal : meals) {
-            LocalTime time = userMeal.getTime();
-            LocalDate date = userMeal.getDate();
-            int excess = mapCaloriesPerDay.get(date) - caloriesPerDay;
-            if (TimeUtil.isBetweenHalfOpen(time, startTime, endTime)) {
-                result.add(new UserMealWithExcess(userMeal.getDateTime(), userMeal.getDescription(), userMeal.getCalories(), new AtomicBoolean(excess > 0)));
+            LocalTime mealTime = userMeal.getTime();
+            LocalDate mealDate = userMeal.getDate();
+            if (TimeUtil.isBetweenHalfOpen(mealTime, startTime, endTime)) {
+                result.add(new UserMealWithExcess(userMeal.getDateTime(), userMeal.getDescription(), userMeal.getCalories(), new AtomicBoolean(mapCaloriesPerDay.get(mealDate) > caloriesPerDay)));
             }
         }
         return result;
@@ -62,34 +59,31 @@ public class UserMealsUtil {
 
     // Stream - Optional 1
     public static List<UserMealWithExcess> filteredByStreams(List<UserMeal> meals, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
-        // Карта где подсчитываем калории за каждый день, заполняем через стрим
         Map<LocalDate, Integer> mapCaloriesPerDay = meals.stream()
                 .collect(Collectors.toMap(UserMeal::getDate, UserMeal::getCalories, Integer::sum));
-        // Формируем лист на выдачу
         return meals.stream()
                 .filter(meal -> TimeUtil.isBetweenHalfOpen(meal.getTime(), startTime, endTime))
-                .map(meal -> new UserMealWithExcess(meal.getDateTime(), meal.getDescription(), meal.getCalories(), new AtomicBoolean(mapCaloriesPerDay.get(meal.getDate()) - caloriesPerDay > 0)))
+                .map(meal -> new UserMealWithExcess(meal.getDateTime(), meal.getDescription(), meal.getCalories(), new AtomicBoolean(mapCaloriesPerDay.get(meal.getDate()) > caloriesPerDay)))
                 .collect(Collectors.toList());
     }
 
     // Cycle - Optional 2
     public static List<UserMealWithExcess> filteredByOneCycle(List<UserMeal> meals, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
-        // Карта где подсчитываем калории за каждый день, и карта где хранится ссылка на дневное превышение калорий
+        // Maps for Calories and Excess per Day
         Map<LocalDate, Integer> mapCaloriesPerDay = new HashMap<>();
         Map<LocalDate, AtomicBoolean> mapExcessPerDay = new HashMap<>();
-        // Формируем лист на выдачу
+        // Result by once cycle pass
         List<UserMealWithExcess> result = new ArrayList<>();
         for (UserMeal userMeal : meals) {
-            LocalTime time = userMeal.getTime();
-            LocalDate date = userMeal.getDate();
-            // По дате вычисляем сумму калорий в одной карте и по этой сумме калорий определяем превышение на данную дату в другой карте,
-            // тип поля превышения ссылочный, после прохода по всем записям показывает правильное значение превышения калорий на эту дату
-            mapCaloriesPerDay.merge(date, userMeal.getCalories(), Integer::sum);
-            if (!mapExcessPerDay.containsKey(date)) mapExcessPerDay.put(date, new AtomicBoolean(false));
-            AtomicBoolean excess = mapExcessPerDay.get(date);
-            excess.set(mapCaloriesPerDay.get(date) - caloriesPerDay > 0);
-            // Отбираем записи по времени, создаём новый объект UserMealWithExcess с полем excess ссылочного типа
-            if (TimeUtil.isBetweenHalfOpen(time, startTime, endTime)) {
+            LocalTime mealTime = userMeal.getTime();
+            LocalDate mealDate = userMeal.getDate();
+            // Compute Calories ana Excess per day (excess reference mutable type)
+            mapCaloriesPerDay.merge(mealDate, userMeal.getCalories(), Integer::sum);
+            mapExcessPerDay.computeIfAbsent(mealDate, k -> new AtomicBoolean(false));
+            AtomicBoolean excess = mapExcessPerDay.get(mealDate);
+            excess.set(mapCaloriesPerDay.get(mealDate) > caloriesPerDay);
+            // Sort by time and create UserMealWithExcess entry
+            if (TimeUtil.isBetweenHalfOpen(mealTime, startTime, endTime)) {
                 result.add(new UserMealWithExcess(userMeal.getDateTime(), userMeal.getDescription(), userMeal.getCalories(), excess));
             }
         }
@@ -98,13 +92,13 @@ public class UserMealsUtil {
 
     // Stream - Optional 2
     public static List<UserMealWithExcess> filteredByOneStream(List<UserMeal> meals, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
-        // Формируем лист на выдачу
+        // Compute UserMealWithExcess List with our Collector
         return meals.stream()
                 .collect(new ExcessCollector(startTime, endTime, caloriesPerDay));
     }
 
 
-    // Коллектор для формирования листа UserMealWithExcess, с сортировкой по времени приёма пищи
+    // Collector for create List<UserMealWithExcess>, with time sorting and compute excess per day
     public static class ExcessCollector implements Collector<UserMeal, ExcessCollector.Holder, List<UserMealWithExcess>> {
 
         private static LocalTime startTime;
@@ -112,15 +106,16 @@ public class UserMealsUtil {
         private static int caloriesPerDay;
 
         public ExcessCollector(LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
-            this.startTime = startTime;
-            this.endTime = endTime;
-            this.caloriesPerDay = caloriesPerDay;
+            ExcessCollector.startTime = startTime;
+            ExcessCollector.endTime = endTime;
+            ExcessCollector.caloriesPerDay = caloriesPerDay;
         }
 
         static class Holder {
-            final List<UserMealWithExcess> list;                // Результирующий лист с записями формата UserMealWithExcess
-            final Map<LocalDate, Integer> mapCal;               // Карта для подсчёта калорий по дате
-            final Map<LocalDate, AtomicBoolean> mapExc;         // Карта для учёта превышения по дате
+            final List<UserMealWithExcess> list;                // Result List<UserMealWithExcess>
+            final Map<LocalDate, Integer> mapCal;               // Map for compute Calories per day
+            final Map<LocalDate, AtomicBoolean> mapExc;         // Map for compute Excess per day
+
             Holder() {
                 this.list = new ArrayList<>();
                 this.mapCal = new HashMap<>();
@@ -136,19 +131,14 @@ public class UserMealsUtil {
         @Override
         public BiConsumer<Holder, UserMeal> accumulator() {
             return (holder, meal) -> {
-                LocalDate date = meal.getDate();
-                holder.mapCal.merge(date, meal.getCalories(), Integer::sum);        // Подсчитываем калории за день
-                AtomicBoolean excess;
-                if (!holder.mapExc.containsKey(date)) {
-                    excess = new AtomicBoolean(false);                    // Создаём ссылочный boolean для учёта превышения калорий, и дальше работаем с сылкой на него
-                    holder.mapExc.put(date, excess);                                // Помещаем новую запись в карту учёта превышения калорий
-                } else {
-                    excess = holder.mapExc.get(date);                               // Берём ссылку на превышение из карты
+                LocalDate mealDate = meal.getDate();
+                holder.mapCal.merge(mealDate, meal.getCalories(), Integer::sum);                    // Compute calories per day
+                holder.mapExc.computeIfAbsent(mealDate, k -> new AtomicBoolean(false));   // Create new reference mutable Boolean for excess
+                AtomicBoolean excess = holder.mapExc.get(mealDate);                                 // Get reference to Excess field
+                if (holder.mapCal.get(mealDate) > caloriesPerDay) {
+                    excess.set(true);                                                               // Set Excess field
                 }
-                if (holder.mapCal.get(date) - caloriesPerDay > 0) {
-                    excess.set(true);                                               // Если превышение достигнуто меняем значение по взятой ссылке
-                }
-                // Если запись подходит по времени на выдачу создаём новую запись UserMealWithExcess и кладём в результирующий лист
+                // Sort by time and create new UserMealWithExcess Entry
                 if (TimeUtil.isBetweenHalfOpen(meal.getTime(), startTime, endTime)) {
                     holder.list.add(new UserMealWithExcess(meal.getDateTime(), meal.getDescription(), meal.getCalories(), excess));
                 }
@@ -161,7 +151,8 @@ public class UserMealsUtil {
                 holder1.list.addAll(holder2.list);
                 holder1.mapCal.putAll(holder2.mapCal);
                 holder1.mapExc.putAll(holder2.mapExc);
-                return holder1; };
+                return holder1;
+            };
         }
 
         @Override
