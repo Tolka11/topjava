@@ -17,8 +17,6 @@ public class MealTo {
         this.excess = excess;
     }
 
-    // Getters for JSP work
-
     public int getId() {
         return id;
     }

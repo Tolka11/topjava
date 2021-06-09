@@ -9,7 +9,7 @@
 <hr>
 <h2>Meals</h2>
 
-<h4><a href="meals?action=add&id=0">Add meal</a></h4>
+<h4><a href="meals?action=add">Add meal</a></h4>
 
 <table border="1" cellspacing="0" cellpadding="10" class="table">
     <tr>
@@ -26,10 +26,9 @@
             <td>${mealTo.description}</td>
             <td>${mealTo.calories}</td>
             <td>
-                <a href="meals?action=update&id=<c:out value="${mealTo.id}"/>&datetime=<c:out value="${mealTo.dateTime.toString()}"/>&description=<c:out
-                value="${mealTo.description}"/>&calories=<c:out value="${mealTo.calories}"/>">Update</a>
+                <a href="meals?action=update&id=${mealTo.id}">Update</a>
             </td>
-            <td><a href="meals?action=delete&id=<c:out value="${mealTo.id}"/>">Delete</a></td>
+            <td><a href="meals?action=delete&id=${mealTo.id}">Delete</a></td>
         </tr>
     </c:forEach>
 </table>
