@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.model.MealTo;
 import ru.javawebinar.topjava.repository.MealsCrud;
-import ru.javawebinar.topjava.repository.MealsCrudInMemory;
+import ru.javawebinar.topjava.repository.MemoryMealsCrud;
 import ru.javawebinar.topjava.util.MealsUtil;
 
 import javax.servlet.ServletException;
@@ -24,7 +24,7 @@ public class MealServlet extends HttpServlet {
     private MealsCrud mealsCrud;
 
     public void init() {
-        mealsCrud = new MealsCrudInMemory();
+        mealsCrud = new MemoryMealsCrud();
     }
 
     @Override
@@ -78,12 +78,10 @@ public class MealServlet extends HttpServlet {
         String dateStr = request.getParameter("datetime");
         LocalDateTime dateTime = LocalDateTime.parse(dateStr);
 
-        Meal meal;
+        Meal meal = new Meal(id, dateTime, description, calories);
         if (id == null) {
-            meal = new Meal(0, dateTime, description, calories);
             mealsCrud.create(meal);
         } else {
-            meal = new Meal(id, dateTime, description, calories);
             mealsCrud.update(meal);
         }
 

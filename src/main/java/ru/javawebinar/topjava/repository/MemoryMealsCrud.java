@@ -5,20 +5,20 @@ import ru.javawebinar.topjava.model.Meal;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class MealsCrudInMemory implements MealsCrud {
+public class MemoryMealsCrud implements MealsCrud {
 
     private final AtomicInteger idCount;
     private final Map<Integer, Meal> mealsMap;
 
-    public MealsCrudInMemory() {
+    public MemoryMealsCrud() {
         idCount = new AtomicInteger(0);
-        mealsMap = new HashMap<>();
+        mealsMap = new ConcurrentHashMap<>();
         create(new Meal(0, LocalDateTime.of(2020, Month.JANUARY, 30, 10, 0), "Завтрак", 500));
         create(new Meal(0, LocalDateTime.of(2020, Month.JANUARY, 30, 13, 0), "Обед", 1000));
         create(new Meal(0, LocalDateTime.of(2020, Month.JANUARY, 30, 20, 0), "Ужин", 500));
@@ -32,40 +32,34 @@ public class MealsCrudInMemory implements MealsCrud {
     public Meal create(Meal meal) {
         int id = idCount.incrementAndGet();
         Meal newMeal = new Meal(id, meal.getDateTime(), meal.getDescription(), meal.getCalories());
-        synchronized (mealsMap) {
-            mealsMap.put(id, newMeal);
-        }
+        mealsMap.putIfAbsent(id, newMeal);
         return newMeal;
     }
 
     @Override
     public List<Meal> getAll() {
-        synchronized (mealsMap) {
-            return mealsMap.values().stream()
-                    .sorted(Comparator.comparing(Meal::getDateTime))
-                    .collect(Collectors.toList());
-        }
+        return mealsMap.values().stream()
+                .sorted(Comparator.comparing(Meal::getDateTime))
+                .collect(Collectors.toList());
     }
 
     @Override
     public Meal getById(int id) {
-        synchronized (mealsMap) {
-            return mealsMap.get(id);
-        }
+        return mealsMap.get(id);
     }
 
     @Override
-    public Meal update(Meal newMeal) {
-        synchronized (mealsMap) {
-            mealsMap.put(newMeal.getId(), newMeal);
+    public Meal update(Meal meal) {
+        Integer id = meal.getId();
+        if (id < 1 || id > idCount.get() || id == null) {
+            return create(meal);
         }
-        return newMeal;
+        mealsMap.replace(id, meal);
+        return meal;
     }
 
     @Override
     public void delete(int id) {
-        synchronized (mealsMap) {
-            mealsMap.remove(id);
-        }
+        mealsMap.remove(id);
     }
 }

@@ -1,5 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <html lang="ru">
 <head>
@@ -13,26 +12,26 @@
 
 <form method="POST" action='meals' name="frmEditMeal">
 
-    <input type="hidden" name="id" value="<c:out value="${(meal.id!=null)?meal.id:null}" />"/>
+    <input type="hidden" name="id" value="${meal.id}"/>
 
     <table border="0">
 
         <tr>
             <td><b>DateTime:</b></td>
             <td><input id="datetime" type="datetime-local" name="datetime"
-                       value="<c:out value="${((meal.dateTime!=null)?meal.dateTime.toString():null)}" />"/>
+                       value="${meal.dateTime.toString()}"/>
             </td>
         </tr>
         <tr>
             <td><b>Description:</b></td>
             <td><input type="text" name="description"
-                       value="<c:out value="${(meal.description!=null)?meal.description:null}" />"/>
+                       value="${meal.description}"/>
             </td>
         </tr>
         <tr>
             <td><b>Calories: </b></td>
             <td><input type="number" name="calories"
-                       value="<c:out value="${(meal.calories!=null)?meal.calories:null}" />"/>
+                       value="${meal.calories}"/>
             </td>
         </tr>
 

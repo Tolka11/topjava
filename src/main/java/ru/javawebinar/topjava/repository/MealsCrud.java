@@ -12,7 +12,7 @@ public interface MealsCrud {
 
     Meal getById(int id);
 
-    Meal update(Meal newMeal);
+    Meal update(Meal meal);
 
     void delete(int id);
 }
