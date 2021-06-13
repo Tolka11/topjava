@@ -23,16 +23,12 @@ public class InMemoryMealRepository implements MealRepository {
     private final AtomicInteger counter = new AtomicInteger(0);
 
     {
-        MealsUtil.meals.forEach(this::save);
-
-//        save(new Meal(null, 2, LocalDateTime.of(2021, Month.JANUARY, 30, 10, 0), "Завтрак", 500));
-//        save(new Meal(null, 2, LocalDateTime.of(2021, Month.JANUARY, 30, 13, 0), "Обед", 1000));
-//        save(new Meal(null, 2, LocalDateTime.of(2021, Month.JANUARY, 30, 20, 0), "Ужин", 500));
-//
-//        save(new Meal(null, 3, LocalDateTime.of(2021, Month.JANUARY, 31, 0, 0), "Еда на граничное значение", 100));
-//        save(new Meal(null, 3, LocalDateTime.of(2021, Month.JANUARY, 31, 10, 0), "Завтрак", 1000));
-//        save(new Meal(null, 3, LocalDateTime.of(2021, Month.JANUARY, 31, 13, 0), "Обед", 500));
-//        save(new Meal(null, 3, LocalDateTime.of(2021, Month.JANUARY, 31, 20, 0), "Ужин", 410));
+        MealsUtil.meals.forEach(meal -> {
+            Integer id = counter.incrementAndGet();
+            meal.setId(id);
+            repository.put(id, meal);
+            return;
+        });
     }
 
     @Override

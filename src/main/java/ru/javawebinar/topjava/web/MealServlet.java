@@ -2,28 +2,39 @@ package ru.javawebinar.topjava.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import ru.javawebinar.topjava.model.Meal;
-import ru.javawebinar.topjava.repository.MealRepository;
-import ru.javawebinar.topjava.repository.inmemory.InMemoryMealRepository;
 import ru.javawebinar.topjava.util.MealsUtil;
+import ru.javawebinar.topjava.web.meal.MealRestController;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 public class MealServlet extends HttpServlet {
     private static final Logger log = LoggerFactory.getLogger(MealServlet.class);
 
-    private MealRepository repository;
+    private MealRestController mealController;
+    ConfigurableApplicationContext appCtx;
 
     @Override
     public void init() {
-        repository = new InMemoryMealRepository();
+        appCtx = new ClassPathXmlApplicationContext("/spring/spring-app.xml");
+        mealController = appCtx.getBean(MealRestController.class);
+    }
+
+    public void destroy() {
+        appCtx.close();
     }
 
     @Override
@@ -38,7 +49,11 @@ public class MealServlet extends HttpServlet {
                 Integer.parseInt(request.getParameter("calories")));
 
         log.info(meal.isNew() ? "Create {}" : "Update {}", meal);
-        repository.save(meal);
+        if (meal.isNew()) {
+            mealController.create(meal);
+        } else {
+            mealController.update(meal, meal.getId());
+        }
         response.sendRedirect("meals");
     }
 
@@ -47,25 +62,58 @@ public class MealServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         switch (action == null ? "all" : action) {
-            case "delete":
+            case "login":
                 int id = getId(request);
+                log.info("Login {}", id);
+                SecurityUtil.setUserId(id);
+                request.setAttribute("meals",
+                        MealsUtil.getTos(mealController.getAll(), MealsUtil.DEFAULT_CALORIES_PER_DAY));
+                request.getRequestDispatcher("/meals.jsp").forward(request, response);
+                break;
+            case "delete":
+                id = getId(request);
                 log.info("Delete {}", id);
-                repository.delete(id);
+                mealController.delete(id);
                 response.sendRedirect("meals");
                 break;
             case "create":
             case "update":
                 final Meal meal = "create".equals(action) ?
                         new Meal(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES), "", 1000) :
-                        repository.get(getId(request));
+                        mealController.get(getId(request));
                 request.setAttribute("meal", meal);
                 request.getRequestDispatcher("/mealForm.jsp").forward(request, response);
+                break;
+            case "filter":
+                log.info("filter");
+                DateTimeFormatter dateformatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                LocalDate startDate = null, endDate = null;
+                LocalTime startTime = null, endTime = null;
+                try {
+                    startDate = LocalDate.parse(request.getParameter("startDate"), dateformatter);
+                } catch (DateTimeParseException e) {
+                }
+                try {
+                    endDate = LocalDate.parse(request.getParameter("endDate"), dateformatter);
+                } catch (DateTimeParseException e) {
+                }
+                try {
+                    startTime = LocalTime.parse(request.getParameter("startTime"));
+                } catch (DateTimeParseException e) {
+                }
+                try {
+                    endTime = LocalTime.parse(request.getParameter("endTime"));
+                } catch (DateTimeParseException e) {
+                }
+                request.setAttribute("meals",
+                        MealsUtil.getTos(mealController.getByFilter(startDate, endDate, startTime, endTime), MealsUtil.DEFAULT_CALORIES_PER_DAY));
+                request.getRequestDispatcher("/meals.jsp").forward(request, response);
                 break;
             case "all":
             default:
                 log.info("getAll");
                 request.setAttribute("meals",
-                        MealsUtil.getTos(repository.getAll(), MealsUtil.DEFAULT_CALORIES_PER_DAY));
+                        MealsUtil.getTos(mealController.getAll(), MealsUtil.DEFAULT_CALORIES_PER_DAY));
                 request.getRequestDispatcher("/meals.jsp").forward(request, response);
                 break;
         }

@@ -21,7 +21,45 @@
     <h3><a href="index.html">Home</a></h3>
     <hr/>
     <h2>Meals</h2>
-    <a href="meals?action=create">Add Meal</a>
+
+    <form method="get" action="meals">
+        <input type="hidden" id="action" name="action" value="filter">
+        <table border="0" cellpadding="10" cellspacing="0">
+            <tr>
+                <th>
+                    От даты (включая)<br/>
+                    <input type="date" name="startDate" id="startDate">
+                </th>
+                <th>
+                    До даты (включая)<br/>
+                    <input type="date" name="endDate" id="endDate">
+                </th>
+                <th width="50"></th>
+                <th>
+                    От времени (включая)<br/>
+                    <input type="time" name="startTime" id="startTime">
+                </th>
+                <th>
+                    До времени (исключая)<br/>
+                    <input type="time" name="endTime" id="endTime">
+                </th>
+            </tr>
+            <tr>
+                <td colspan="5" align="right">
+                    <br/>
+                    <div class="card-footer text-right">
+                        <input type="button" onclick="window.location.href='meals'" value="Отменить">
+                        <button type="submit">Отфильтровать</button>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <br/>
+    <br/>
+    <input type="button" onclick="window.location.href='meals?action=create';" value="Add meal">
+
     <br><br>
     <table border="1" cellpadding="8" cellspacing="0">
         <thead>
