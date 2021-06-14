@@ -6,8 +6,8 @@ import org.springframework.stereotype.Repository;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.repository.MealRepository;
 import ru.javawebinar.topjava.util.MealsUtil;
-import ru.javawebinar.topjava.web.SecurityUtil;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
@@ -32,10 +32,10 @@ public class InMemoryMealRepository implements MealRepository {
     }
 
     @Override
-    public Meal save(Meal meal) {
+    public Meal save(int userId, Meal meal) {
         log.info("save {}", meal);
         // null if created/updated meal do not belong to userId
-        if (SecurityUtil.authUserId() != meal.getUserId()) {
+        if (userId != meal.getUserId()) {
             return null;
         }
         if (meal.isNew()) {
@@ -43,7 +43,7 @@ public class InMemoryMealRepository implements MealRepository {
             return repository.computeIfAbsent(meal.getId(), k -> meal);
         }
         // null if existing updating meal do not belong to userId
-        if (SecurityUtil.authUserId() != get(meal.getId()).getUserId()) {
+        if (userId != repository.get(meal.getId()).getUserId()) {
             return null;
         }
         // handle case: update, but not present in storage
@@ -51,30 +51,38 @@ public class InMemoryMealRepository implements MealRepository {
     }
 
     @Override
-    public boolean delete(int id) {
+    public boolean delete(int userId, int id) {
         log.info("delete {}", id);
         // false if meal do not belong to userId
-        if (get(id).getUserId() != SecurityUtil.authUserId()) {
+        if (userId != repository.get(id).getUserId()) {
             return false;
         }
         return repository.remove(id) != null;
     }
 
     @Override
-    public Meal get(int id) {
+    public Meal get(int userId, int id) {
         log.info("get {}", id);
         // null if meal do not belong to userId
         Meal meal = repository.get(id);
-        return (meal.getUserId() == SecurityUtil.authUserId() ? meal : null);
+        return (userId == meal.getUserId() ? meal : null);
     }
 
     @Override
-    public Collection<Meal> getAll() {
+    public Collection<Meal> getAll(int userId) {
         log.info("getAll");
         // ORDERED dateTime desc
         return repository.values().stream()
-                .filter(meal -> meal.getUserId() == SecurityUtil.authUserId())
+                .filter(meal -> userId == meal.getUserId())
                 .sorted(Comparator.comparing(Meal::getDateTime).reversed())
+                .collect(Collectors.toList());
+    }
+
+    public Collection<Meal> getByDateFilter(int userId, LocalDate startDate, LocalDate endDate) {
+        log.info("getByDateFilter");
+        return getAll(userId).stream()
+                .filter(meal -> !meal.getDate().isBefore(startDate))    // from date (including)
+                .filter(meal -> !meal.getDate().isAfter(endDate))       // to date (including)
                 .collect(Collectors.toList());
     }
 }

@@ -2,6 +2,7 @@ package ru.javawebinar.topjava.web.user;
 
 import org.springframework.stereotype.Controller;
 import ru.javawebinar.topjava.model.User;
+import ru.javawebinar.topjava.web.SecurityUtil;
 
 import java.util.List;
 
@@ -36,5 +37,9 @@ public class AdminRestController extends AbstractUserController {
     @Override
     public User getByMail(String email) {
         return super.getByMail(email);
+    }
+
+    public void setUserId(int userId) {
+        SecurityUtil.setUserId(userId);
     }
 }

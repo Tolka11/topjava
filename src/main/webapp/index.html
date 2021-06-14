@@ -5,7 +5,27 @@
 </head>
 <body>
 <h3>Проект <a href="https://github.com/JavaWebinar/topjava" target="_blank">Java Enterprise (Topjava)</a></h3>
-<hr>
+<hr/>
+<table border="0" cellpadding="20" cellspacing="0">
+    <tr>
+        <th>
+            Enter as:
+        </th>
+        <th>
+            <form action="users" method="post">
+                <input type="hidden" name="userId" value="1">
+                <input type="submit" name="login" value="Admin: id 1"/>
+            </form>
+        </th>
+        <th>
+            <form action="users" method="post">
+                <input type="hidden" name="userId" value="2">
+                <input type="submit" name="login" value="User: id 2"/>
+            </form>
+        </th>
+    </tr>
+</table>
+<hr/>
 <ul style="font-size: large">
     <li>
         <a href="users">Users</a>
@@ -13,8 +33,6 @@
     <br/>
     <li>
         Meals
-        <input type="button" onclick="window.location.href='meals?action=login&id=1';" value="Admin: id 1">
-        <input type="button" onclick="window.location.href='meals?action=login&id=2';" value="User: id 2">
     </li>
 </ul>
 </body>

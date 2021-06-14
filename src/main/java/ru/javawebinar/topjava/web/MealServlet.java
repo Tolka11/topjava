@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import ru.javawebinar.topjava.model.Meal;
-import ru.javawebinar.topjava.util.MealsUtil;
 import ru.javawebinar.topjava.web.meal.MealRestController;
 
 import javax.servlet.ServletException;
@@ -17,7 +16,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
@@ -25,7 +23,7 @@ public class MealServlet extends HttpServlet {
     private static final Logger log = LoggerFactory.getLogger(MealServlet.class);
 
     private MealRestController mealController;
-    ConfigurableApplicationContext appCtx;
+    private ConfigurableApplicationContext appCtx;
 
     @Override
     public void init() {
@@ -33,6 +31,7 @@ public class MealServlet extends HttpServlet {
         mealController = appCtx.getBean(MealRestController.class);
     }
 
+    @Override
     public void destroy() {
         appCtx.close();
     }
@@ -62,16 +61,8 @@ public class MealServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         switch (action == null ? "all" : action) {
-            case "login":
-                int id = getId(request);
-                log.info("Login {}", id);
-                SecurityUtil.setUserId(id);
-                request.setAttribute("meals",
-                        MealsUtil.getTos(mealController.getAll(), MealsUtil.DEFAULT_CALORIES_PER_DAY));
-                request.getRequestDispatcher("/meals.jsp").forward(request, response);
-                break;
             case "delete":
-                id = getId(request);
+                int id = getId(request);
                 log.info("Delete {}", id);
                 mealController.delete(id);
                 response.sendRedirect("meals");
@@ -86,34 +77,18 @@ public class MealServlet extends HttpServlet {
                 break;
             case "filter":
                 log.info("filter");
-                DateTimeFormatter dateformatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                LocalDate startDate = null, endDate = null;
-                LocalTime startTime = null, endTime = null;
-                try {
-                    startDate = LocalDate.parse(request.getParameter("startDate"), dateformatter);
-                } catch (DateTimeParseException e) {
-                }
-                try {
-                    endDate = LocalDate.parse(request.getParameter("endDate"), dateformatter);
-                } catch (DateTimeParseException e) {
-                }
-                try {
-                    startTime = LocalTime.parse(request.getParameter("startTime"));
-                } catch (DateTimeParseException e) {
-                }
-                try {
-                    endTime = LocalTime.parse(request.getParameter("endTime"));
-                } catch (DateTimeParseException e) {
-                }
-                request.setAttribute("meals",
-                        MealsUtil.getTos(mealController.getByFilter(startDate, endDate, startTime, endTime), MealsUtil.DEFAULT_CALORIES_PER_DAY));
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                LocalDate startDate = request.getParameter("startDate").equals("") ? null : LocalDate.parse(request.getParameter("startDate"), formatter);
+                LocalDate endDate = request.getParameter("endDate").equals("") ? null : LocalDate.parse(request.getParameter("endDate"), formatter);
+                LocalTime startTime = request.getParameter("startTime").equals("") ? null : LocalTime.parse(request.getParameter("startTime"));
+                LocalTime endTime = request.getParameter("endTime").equals("") ? null : LocalTime.parse(request.getParameter("endTime"));
+                request.setAttribute("meals", mealController.getByFilter(startDate, endDate, startTime, endTime));
                 request.getRequestDispatcher("/meals.jsp").forward(request, response);
                 break;
             case "all":
             default:
                 log.info("getAll");
-                request.setAttribute("meals",
-                        MealsUtil.getTos(mealController.getAll(), MealsUtil.DEFAULT_CALORIES_PER_DAY));
+                request.setAttribute("meals", mealController.getAll());
                 request.getRequestDispatcher("/meals.jsp").forward(request, response);
                 break;
         }
