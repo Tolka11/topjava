@@ -40,9 +40,15 @@ public class MealServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
         String id = request.getParameter("id");
+        Integer userId;
+        try {
+            userId = Integer.parseInt(request.getParameter("userId"));
+        } catch (NumberFormatException nfe) {
+            userId = null;
+        }
 
         Meal meal = new Meal(id.isEmpty() ? null : Integer.valueOf(id),
-                Integer.parseInt(request.getParameter("userId")),
+                userId,
                 LocalDateTime.parse(request.getParameter("dateTime")),
                 request.getParameter("description"),
                 Integer.parseInt(request.getParameter("calories")));

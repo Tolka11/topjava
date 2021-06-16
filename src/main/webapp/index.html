@@ -9,18 +9,16 @@
 <table border="0" cellpadding="20" cellspacing="0">
     <tr>
         <th>
-            Enter as:
+            Login as:
         </th>
         <th>
             <form action="users" method="post">
-                <input type="hidden" name="userId" value="1">
-                <input type="submit" name="login" value="Admin: id 1"/>
-            </form>
-        </th>
-        <th>
-            <form action="users" method="post">
-                <input type="hidden" name="userId" value="2">
-                <input type="submit" name="login" value="User: id 2"/>
+                <select size="1" name="userId">
+                    <option disabled>Выберите пользователя</option>
+                    <option value="1">Admin</option>
+                    <option value="2">User</option>
+                </select>
+                <p><input type="submit" value="Enter"></p>
             </form>
         </th>
     </tr>

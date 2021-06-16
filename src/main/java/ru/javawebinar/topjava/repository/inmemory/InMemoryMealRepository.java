@@ -8,8 +8,8 @@ import ru.javawebinar.topjava.repository.MealRepository;
 import ru.javawebinar.topjava.util.MealsUtil;
 
 import java.time.LocalDate;
-import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,27 +23,19 @@ public class InMemoryMealRepository implements MealRepository {
     private final AtomicInteger counter = new AtomicInteger(0);
 
     {
-        MealsUtil.meals.forEach(meal -> {
-            Integer id = counter.incrementAndGet();
-            meal.setId(id);
-            repository.put(id, meal);
-            return;
-        });
+        MealsUtil.meals.forEach(meal -> save(meal.getUserId(), meal));
     }
 
     @Override
     public Meal save(int userId, Meal meal) {
         log.info("save {}", meal);
-        // null if created/updated meal do not belong to userId
-        if (userId != meal.getUserId()) {
-            return null;
-        }
         if (meal.isNew()) {
             meal.setId(counter.incrementAndGet());
             return repository.computeIfAbsent(meal.getId(), k -> meal);
         }
         // null if existing updating meal do not belong to userId
-        if (userId != repository.get(meal.getId()).getUserId()) {
+        Integer userIdInMeal = getUserIdFromMealInRep(meal.getId());
+        if (userId != userIdInMeal) {
             return null;
         }
         // handle case: update, but not present in storage
@@ -54,7 +46,8 @@ public class InMemoryMealRepository implements MealRepository {
     public boolean delete(int userId, int id) {
         log.info("delete {}", id);
         // false if meal do not belong to userId
-        if (userId != repository.get(id).getUserId()) {
+        Integer userIdInMeal = getUserIdFromMealInRep(id);
+        if (userId != userIdInMeal) {
             return false;
         }
         return repository.remove(id) != null;
@@ -65,25 +58,43 @@ public class InMemoryMealRepository implements MealRepository {
         log.info("get {}", id);
         // null if meal do not belong to userId
         Meal meal = repository.get(id);
+        if (meal == null) {
+            return null;
+        }
         return (userId == meal.getUserId() ? meal : null);
     }
 
     @Override
-    public Collection<Meal> getAll(int userId) {
+    public List<Meal> getAll(int userId) {
         log.info("getAll");
         // ORDERED dateTime desc
-        return repository.values().stream()
-                .filter(meal -> userId == meal.getUserId())
+        return getByUserId(userId).stream()
                 .sorted(Comparator.comparing(Meal::getDateTime).reversed())
                 .collect(Collectors.toList());
     }
 
-    public Collection<Meal> getByDateFilter(int userId, LocalDate startDate, LocalDate endDate) {
+    @Override
+    public List<Meal> getByDateFilter(int userId, LocalDate startDate, LocalDate endDate) {
         log.info("getByDateFilter");
-        return getAll(userId).stream()
+        return getByUserId(userId).stream()
                 .filter(meal -> !meal.getDate().isBefore(startDate))    // from date (including)
                 .filter(meal -> !meal.getDate().isAfter(endDate))       // to date (including)
+                .sorted(Comparator.comparing(Meal::getDateTime).reversed())
                 .collect(Collectors.toList());
+    }
+
+    private List<Meal> getByUserId(int userId) {
+        return repository.values().stream()
+                .filter(meal -> userId == meal.getUserId())
+                .collect(Collectors.toList());
+    }
+
+    private Integer getUserIdFromMealInRep(int id) {
+        try {
+            return repository.get(id).getUserId();
+        } catch (NullPointerException npe) {
+            return null;
+        }
     }
 }
 
