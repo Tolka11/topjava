@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Repository
@@ -58,43 +59,37 @@ public class InMemoryMealRepository implements MealRepository {
         log.info("get {}", id);
         // null if meal do not belong to userId
         Meal meal = repository.get(id);
-        if (meal == null) {
-            return null;
-        }
-        return (userId == meal.getUserId() ? meal : null);
+        return (meal != null || userId == meal.getUserId() ? meal : null);
     }
 
     @Override
     public List<Meal> getAll(int userId) {
         log.info("getAll");
         // ORDERED dateTime desc
-        return getByUserId(userId).stream()
-                .sorted(Comparator.comparing(Meal::getDateTime).reversed())
-                .collect(Collectors.toList());
+        return filterByPredicate(userId, meal -> true);
     }
 
     @Override
     public List<Meal> getByDateFilter(int userId, LocalDate startDate, LocalDate endDate) {
         log.info("getByDateFilter");
-        return getByUserId(userId).stream()
-                .filter(meal -> !meal.getDate().isBefore(startDate))    // from date (including)
-                .filter(meal -> !meal.getDate().isAfter(endDate))       // to date (including)
+        return filterByPredicate(userId, meal -> isDateBetween(meal.getDate(), startDate, endDate));
+    }
+
+    private List<Meal> filterByPredicate(int userId, Predicate<Meal> filter) {
+        return repository.values().stream()
+                .filter(meal -> userId == meal.getUserId())
+                .filter(filter)
                 .sorted(Comparator.comparing(Meal::getDateTime).reversed())
                 .collect(Collectors.toList());
     }
 
-    private List<Meal> getByUserId(int userId) {
-        return repository.values().stream()
-                .filter(meal -> userId == meal.getUserId())
-                .collect(Collectors.toList());
+    private Integer getUserIdFromMealInRep(int id) {
+        Meal meal = repository.get(id);
+        return meal == null ? null : meal.getUserId();
     }
 
-    private Integer getUserIdFromMealInRep(int id) {
-        try {
-            return repository.get(id).getUserId();
-        } catch (NullPointerException npe) {
-            return null;
-        }
+    private static boolean isDateBetween(LocalDate ld, LocalDate startDate, LocalDate endDate) {
+        return ld.compareTo(startDate) >= 0 && ld.compareTo(endDate) <= 0;
     }
 }
 
