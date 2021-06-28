@@ -1,12 +1,14 @@
 package ru.javawebinar.topjava.service;
 
 import org.junit.AfterClass;
+import org.junit.AssumptionViolatedException;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestRule;
+import org.junit.rules.Stopwatch;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
-import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.test.context.ContextConfiguration;
@@ -17,11 +19,10 @@ import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.util.exception.NotFoundException;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.Month;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertThrows;
 import static ru.javawebinar.topjava.MealTestData.*;
@@ -36,18 +37,39 @@ import static ru.javawebinar.topjava.UserTestData.USER_ID;
 @Sql(scripts = "classpath:db/populateDB.sql", config = @SqlConfig(encoding = "UTF-8"))
 public class MealServiceTest {
 
+    private static final Logger log = LoggerFactory.getLogger(MealServiceTest.class);
     private static List<String> runTimes = new ArrayList<>();
 
     @Autowired
     private MealService service;
 
     @Rule
-    public RunTimeRule rule = new RunTimeRule();
+    public Stopwatch stopwatch = new Stopwatch() {
+        @Override
+        protected void succeeded(long nanos, Description description) {
+            log.info("method {} succeeded - {} milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos));
+        }
+
+        @Override
+        protected void failed(long nanos, Throwable e, Description description) {
+            log.error("method {} failed - {} milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos));
+        }
+
+        @Override
+        protected void skipped(long nanos, AssumptionViolatedException e, Description description) {
+            log.warn("method {} skipped - {} milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos));
+        }
+
+        @Override
+        protected void finished(long nanos, Description description) {
+            runTimes.add(String.format("%-23s - %4d milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos)));
+        }
+    };
 
     @AfterClass
     public static void after() {
         for (String str : runTimes) {
-            System.out.println(str);
+            log.info(str);
         }
     }
 
@@ -129,38 +151,5 @@ public class MealServiceTest {
     @Test
     public void getBetweenWithNullDates() {
         MATCHER.assertMatch(service.getBetweenInclusive(null, null, USER_ID), meals);
-    }
-
-    public class RunTimeRule implements TestRule {
-        @Override
-        public Statement apply(final Statement base, Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    LocalDateTime from = LocalDateTime.now();
-                    base.evaluate();
-                    LocalDateTime to = LocalDateTime.now();
-
-                    String str = description.getMethodName() + " -" + testRunTime(from, to);
-                    System.out.println("************ The execution time of test method " + str);
-                    runTimes.add(str);
-                }
-            };
-        }
-
-        private String testRunTime(LocalDateTime from, LocalDateTime to) {
-            long hours = ChronoUnit.HOURS.between(from, to);
-            long minutes = ChronoUnit.MINUTES.between(from, to);
-            long seconds = ChronoUnit.SECONDS.between(from, to);
-            long milliseconds = ChronoUnit.MILLIS.between(from, to);
-            long nano = ChronoUnit.NANOS.between(from, to);
-
-            return (" " +                           // Зачем заморачивался не знаю, достаточно было миллисекунд и нано в скобках ;)
-                    (hours == 0 ? "" : hours + " hours ") +
-                    (minutes == 0 ? "" : minutes % (hours == 0 ? Long.MAX_VALUE : hours * 60) + " minutes ") +
-                    (seconds == 0 ? "" : seconds % (minutes == 0 ? Long.MAX_VALUE : minutes * 60) + " seconds ") +
-                    (milliseconds == 0 ? "" : milliseconds % (seconds == 0 ? Long.MAX_VALUE : seconds * 1000) + " milliseconds ") +
-                    (nano == 0 ? "" : "(" + nano + " nano)"));
-        }
     }
 }

@@ -1,6 +1,5 @@
 package ru.javawebinar.topjava.repository.jpa;
 
-import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ru.javawebinar.topjava.model.Meal;
@@ -22,20 +21,17 @@ public class JpaMealRepository implements MealRepository {
     @Override
     @Transactional
     public Meal save(Meal meal, int userId) {
+        User ref = em.getReference(User.class, userId);
+        meal.setUser(ref);
         if (meal.isNew()) {
-            User ref = em.getReference(User.class, userId);
-            meal.setUser(ref);
             em.persist(meal);
             return meal;
         } else {
-            int res = em.createNamedQuery(Meal.UPDATE)
-                    .setParameter("id", meal.getId())
-                    .setParameter("userId", userId)
-                    .setParameter("dateTime", meal.getDateTime())
-                    .setParameter("description", meal.getDescription())
-                    .setParameter("calories", meal.getCalories())
-                    .executeUpdate();
-            return res == 0 ? null : meal;
+            Meal existingMeal = em.find(Meal.class, meal.getId());
+            if (existingMeal == null || existingMeal.getUser().getId() != userId) {     // "existingMeal == null" for prevent NPE exception
+                return null;
+            }
+            return em.merge(meal);
         }
     }
 
@@ -50,11 +46,11 @@ public class JpaMealRepository implements MealRepository {
 
     @Override
     public Meal get(int id, int userId) {
-        List<Meal> meals = em.createNamedQuery(Meal.GET, Meal.class)
-                .setParameter("id", id)
-                .setParameter("userId", userId)
-                .getResultList();
-        return DataAccessUtils.singleResult(meals);
+        Meal meal = em.find(Meal.class, id);
+        if (meal == null || meal.getUser().getId() != userId) {                         // "meal == null" for prevent NPE exception
+            return null;
+        }
+        return meal;
     }
 
     @Override

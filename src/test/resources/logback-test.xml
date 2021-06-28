@@ -1,8 +1,17 @@
-<configuration>
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
 
-    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
-        <resetJUL>true</resetJUL>
-    </contextListener>
+    <!-- To enable JMX Management -->
+    <jmxConfigurator/>
+
+    <appender name="file" class="ch.qos.logback.core.FileAppender">
+        <file>${TOPJAVA_ROOT}/log/topjava.log</file>
+
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%date %-5level %logger{50}.%M:%L - %msg%n</pattern>
+        </encoder>
+    </appender>
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -13,9 +22,10 @@
 
     <logger name="org.postgresql" level="debug"/>
     <logger name="org.springframework.jdbc" level="info"/>
-    <logger name="ru.javawebinar.topjava" level="debug"/>
+    <logger name="ru.javawebinar.topjava" level="info"/>
 
-    <root level="INFO">
+    <root level="info">
+        <appender-ref ref="file"/>
         <appender-ref ref="console"/>
     </root>
 
