@@ -1,7 +1,6 @@
 package ru.javawebinar.topjava.service;
 
 import org.junit.AfterClass;
-import org.junit.AssumptionViolatedException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Stopwatch;
@@ -20,8 +19,6 @@ import ru.javawebinar.topjava.util.exception.NotFoundException;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertThrows;
@@ -38,7 +35,7 @@ import static ru.javawebinar.topjava.UserTestData.USER_ID;
 public class MealServiceTest {
 
     private static final Logger log = LoggerFactory.getLogger(MealServiceTest.class);
-    private static List<String> runTimes = new ArrayList<>();
+    private static StringBuilder sb = new StringBuilder("The time of execution test methods:");
 
     @Autowired
     private MealService service;
@@ -46,31 +43,15 @@ public class MealServiceTest {
     @Rule
     public Stopwatch stopwatch = new Stopwatch() {
         @Override
-        protected void succeeded(long nanos, Description description) {
-            log.info("method {} succeeded - {} milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos));
-        }
-
-        @Override
-        protected void failed(long nanos, Throwable e, Description description) {
-            log.error("method {} failed - {} milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos));
-        }
-
-        @Override
-        protected void skipped(long nanos, AssumptionViolatedException e, Description description) {
-            log.warn("method {} skipped - {} milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos));
-        }
-
-        @Override
         protected void finished(long nanos, Description description) {
-            runTimes.add(String.format("%-23s - %4d milliseconds", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos)));
+            log.info("method {} executed during {} ms", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos));
+            sb.append(String.format("\n%-23s - %4d ms", description.getMethodName(), TimeUnit.NANOSECONDS.toMillis(nanos)));
         }
     };
 
     @AfterClass
     public static void after() {
-        for (String str : runTimes) {
-            log.info(str);
-        }
+        log.info(sb.toString());
     }
 
     @Test
