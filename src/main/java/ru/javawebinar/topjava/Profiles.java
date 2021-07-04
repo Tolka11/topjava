@@ -8,11 +8,22 @@ public class Profiles {
             JPA = "jpa",
             DATAJPA = "datajpa";
 
-    public static final String REPOSITORY_IMPLEMENTATION = JDBC;
+    public static final String REPOSITORY_IMPLEMENTATION = DATAJPA;
 
     public static final String
             POSTGRES_DB = "postgres",
             HSQL_DB = "hsqldb";
+
+    //  Get DB profile depending of DB driver in classpath
+    public static String getActiveDbProfile() {
+        if (ClassUtils.isPresent("org.postgresql.Driver", null)) {
+            return POSTGRES_DB;
+        } else if (ClassUtils.isPresent("org.hsqldb.jdbcDriver", null)) {
+            return HSQL_DB;
+        } else {
+            throw new IllegalStateException("Could not find DB driver");
+        }
+    }
 
     //  Get profiles depending of DB driver in classpath and from variable REPOSITORY_IMPLEMENTATION
     public static String[] getActiveProfiles() {
