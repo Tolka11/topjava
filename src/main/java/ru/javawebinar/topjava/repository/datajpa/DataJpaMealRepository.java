@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 @Repository
 @Profile("datajpa")
 public class DataJpaMealRepository implements MealRepository {
-    private final CrudMealRepository crudRepository;
+    private final CrudMealRepository crudMealRepository;
     private final CrudUserRepository crudUserRepository;
 
-    public DataJpaMealRepository(CrudMealRepository crudRepository, CrudUserRepository crudUserRepository) {
-        this.crudRepository = crudRepository;
+    public DataJpaMealRepository(CrudMealRepository crudMealRepository, CrudUserRepository crudUserRepository) {
+        this.crudMealRepository = crudMealRepository;
         this.crudUserRepository = crudUserRepository;
     }
 
@@ -27,22 +27,23 @@ public class DataJpaMealRepository implements MealRepository {
         if (!meal.isNew() && get(meal.id(), userId) == null) {
             return null;
         }
-        return crudRepository.save(meal);
+        return crudMealRepository.save(meal);
     }
 
     @Override
     public boolean delete(int id, int userId) {
-        return crudRepository.delete(id, userId) != 0;
+        return crudMealRepository.delete(id, userId) != 0;
     }
 
     @Override
     public Meal get(int id, int userId) {
-        return crudRepository.findMealByIdAndUserId(id, userId);
+        return crudMealRepository.findMealByIdAndUserId(id, userId);
     }
+
 
     @Override
     public List<Meal> getAll(int userId) {
-        return crudRepository.findAllByUserIdOrderByDateTimeDesc(userId);
+        return crudMealRepository.findAllByUserIdOrderByDateTimeDesc(userId);
     }
 
     @Override
@@ -50,5 +51,15 @@ public class DataJpaMealRepository implements MealRepository {
         return getAll(userId).stream()
                 .filter(meal -> Util.isBetweenHalfOpen(meal.getDateTime(), startDateTime, endDateTime))
                 .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public Meal getWithUser(int id, int userId) {
+        Meal meal = crudMealRepository.findMealByIdAndUserId(id, userId);
+        if (meal != null) {
+            meal.setUser(crudUserRepository.findById(userId).orElse(null));
+        }
+        return meal;
     }
 }

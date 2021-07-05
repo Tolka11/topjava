@@ -2,6 +2,7 @@ package ru.javawebinar.topjava.service;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import ru.javawebinar.topjava.model.User;
@@ -50,5 +51,10 @@ public class UserService {
     public void update(User user) {
         Assert.notNull(user, "user must not be null");
         checkNotFoundWithId(repository.save(user), user.id());
+    }
+
+    @Profile("datajpa")
+    public User getWithMeals(int id) {
+        return checkNotFoundWithId(repository.getWithMeals(id), id);
     }
 }
