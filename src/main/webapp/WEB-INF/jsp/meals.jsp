@@ -12,7 +12,7 @@
 <section>
     <h3><spring:message code="meal.title"/></h3>
 
-    <form method="get" action="/topjava/meals/filter">
+    <form method="get" action="${pageContext.request.contextPath}/meals/filter">
         <%--        <input type="hidden" name="action" value="filter">--%>
         <dl>
             <dt><spring:message code="meal.fromdate"/></dt>
@@ -34,7 +34,7 @@
     </form>
     <hr/>
 
-    <a href="/topjava/addmeal"><spring:message code="meal.add"/></a>
+    <a href="${pageContext.request.contextPath}/addmeal"><spring:message code="meal.add"/></a>
     <br><br>
     <table border="1" cellpadding="8" cellspacing="0">
         <thead>
@@ -57,8 +57,8 @@
                 </td>
                 <td>${meal.description}</td>
                 <td>${meal.calories}</td>
-                <td><a href="/topjava/updatemeal/${meal.id}"><spring:message code="meal.update"/></a></td>
-                <td><a href="/topjava/deletemeal/${meal.id}"><spring:message code="meal.delete"/></a></td>
+                <td><a href="${pageContext.request.contextPath}/updatemeal/${meal.id}"><spring:message code="meal.update"/></a></td>
+                <td><a href="${pageContext.request.contextPath}/deletemeal/${meal.id}"><spring:message code="meal.delete"/></a></td>
             </tr>
         </c:forEach>
     </table>
