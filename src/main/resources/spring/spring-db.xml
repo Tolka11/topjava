@@ -18,6 +18,8 @@
         <jdbc:script encoding="utf-8" location="classpath:db/populateDB.sql"/>
     </jdbc:initialize-database>
 
+    <tx:annotation-driven/>
+
     <!-- Choose profile from (hsqldb/ postgres) and (jdbc/ datajpa/ jpa) -->
 
     <beans profile="hsqldb">
@@ -67,13 +69,16 @@
             <constructor-arg ref="jdbcTemplate"/>
         </bean>
 
-        <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
             <property name="dataSource" ref="dataSource"/>
         </bean>
-        <tx:annotation-driven transaction-manager="txManager" proxy-target-class="true"/>
     </beans>
 
     <beans profile="jpa,datajpa">
+        <bean class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
+            <property name="location" value="classpath:spring/beanOverride.cfg"/>
+        </bean>
+
         <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
               p:dataSource-ref="dataSource"
               p:packagesToScan="ru.javawebinar.**.model">
@@ -109,8 +114,6 @@
                 </bean>
             </property>
         </bean>
-
-        <tx:annotation-driven/>
 
         <!-- Transaction manager for a single JPA EntityManagerFactory (alternative to JTA) -->
         <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager"

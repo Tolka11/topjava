@@ -11,16 +11,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.repository.MealRepository;
+import ru.javawebinar.topjava.util.ValidationUtil;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
-import javax.validation.Validation;
-import javax.validation.Validator;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Repository
 @Transactional(readOnly = true)
@@ -33,8 +27,6 @@ public class JdbcMealRepository implements MealRepository {
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     private final SimpleJdbcInsert insertMeal;
-
-    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     public JdbcMealRepository(JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.insertMeal = new SimpleJdbcInsert(jdbcTemplate)
@@ -49,7 +41,7 @@ public class JdbcMealRepository implements MealRepository {
     @Transactional
     public Meal save(Meal meal, int userId) {
 
-        mealValidation(List.of(meal));
+        ValidationUtil.jdbcValidation(meal);
 
         MapSqlParameterSource map = new MapSqlParameterSource()
                 .addValue("id", meal.getId())
@@ -82,7 +74,6 @@ public class JdbcMealRepository implements MealRepository {
     public Meal get(int id, int userId) {
         List<Meal> meals = jdbcTemplate.query(
                 "SELECT * FROM meals WHERE id = ? AND user_id = ?", ROW_MAPPER, id, userId);
-        mealValidation(meals);
         return DataAccessUtils.singleResult(meals);
     }
 
@@ -90,7 +81,6 @@ public class JdbcMealRepository implements MealRepository {
     public List<Meal> getAll(int userId) {
         List<Meal> meals = jdbcTemplate.query(
                 "SELECT * FROM meals WHERE user_id=? ORDER BY date_time DESC", ROW_MAPPER, userId);
-        mealValidation(meals);
         return meals;
     }
 
@@ -99,17 +89,6 @@ public class JdbcMealRepository implements MealRepository {
         List<Meal> meals = jdbcTemplate.query(
                 "SELECT * FROM meals WHERE user_id=?  AND date_time >=  ? AND date_time < ? ORDER BY date_time DESC",
                 ROW_MAPPER, userId, startDateTime, endDateTime);
-        mealValidation(meals);
         return meals;
-    }
-
-    private void mealValidation(Collection<Meal> meals) {
-        Set<ConstraintViolation<Meal>> allMealsViolations = new HashSet<>();
-        for (Meal meal : meals) {
-            allMealsViolations.addAll(validator.validate(meal));
-        }
-        if (allMealsViolations.size() != 0) {
-            throw new ConstraintViolationException("Not valid Meal object. ", allMealsViolations);
-        }
     }
 }

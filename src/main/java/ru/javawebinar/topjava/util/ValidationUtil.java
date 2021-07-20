@@ -6,7 +6,16 @@ import org.springframework.lang.NonNull;
 import ru.javawebinar.topjava.model.AbstractBaseEntity;
 import ru.javawebinar.topjava.util.exception.NotFoundException;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import java.util.Set;
+
 public class ValidationUtil {
+
+    private static final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
     private ValidationUtil() {
     }
 
@@ -50,5 +59,13 @@ public class ValidationUtil {
     public static Throwable getRootCause(@NonNull Throwable t) {
         Throwable rootCause = NestedExceptionUtils.getRootCause(t);
         return rootCause != null ? rootCause : t;
+    }
+
+    // JDBC validation
+    public static <T> void jdbcValidation(T obj) {
+        Set<ConstraintViolation<T>> objectViolations = validator.validate(obj);
+        if (objectViolations.size() != 0) {
+            throw new ConstraintViolationException(objectViolations);
+        }
     }
 }

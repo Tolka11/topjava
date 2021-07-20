@@ -9,9 +9,9 @@
 
 <section>
     <hr>
-    <h2><spring:message code="mealform.update"/></h2>
+    <h2><spring:message code="mealform.${action}"/></h2>
     <jsp:useBean id="meal" type="ru.javawebinar.topjava.model.Meal" scope="request"/>
-    <form method="post" action="savemeal">
+    <form method="post" action="meals">
         <input type="hidden" name="id" value="${meal.id}">
         <dl>
             <dt><spring:message code="mealform.datetime"/></dt>

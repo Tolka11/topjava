@@ -54,7 +54,6 @@ public abstract class AbstractMealServiceTest extends AbstractServiceTest {
                 service.create(new Meal(null, meal1.getDateTime(), "duplicate", 100), USER_ID));
     }
 
-
     @Test
     public void get() {
         Meal actual = service.get(ADMIN_MEAL_ID, ADMIN_ID);
@@ -87,7 +86,7 @@ public abstract class AbstractMealServiceTest extends AbstractServiceTest {
 
     @Test
     public void getAll() {
-        MATCHER.assertMatch(service.getAll(USER_ID), meals);
+        MATCHER.assertMatch(service.getAll(USER_ID), userMeals);
     }
 
     @Test
@@ -100,7 +99,7 @@ public abstract class AbstractMealServiceTest extends AbstractServiceTest {
 
     @Test
     public void getBetweenWithNullDates() {
-        MATCHER.assertMatch(service.getBetweenInclusive(null, null, USER_ID), meals);
+        MATCHER.assertMatch(service.getBetweenInclusive(null, null, USER_ID), userMeals);
     }
 
     @Test
