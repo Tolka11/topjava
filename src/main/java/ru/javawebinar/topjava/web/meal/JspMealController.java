@@ -30,13 +30,13 @@ public class JspMealController extends AbstractMealController {
     }
 
     @GetMapping("")
-    public String getAllJsp(Model model) {
+    public String getAll(Model model) {
         model.addAttribute("meals", getAll());
         return "meals";
     }
 
     @GetMapping("/update")
-    public String updateJsp(Model model, @RequestParam("id") String sid) {
+    public String update(Model model, @RequestParam("id") String sid) {
         int id = Integer.parseInt(sid);
         model.addAttribute("meal", get(id));
         model.addAttribute("action", "update");
@@ -44,21 +44,21 @@ public class JspMealController extends AbstractMealController {
     }
 
     @GetMapping("/add")
-    public String addJsp(Model model) {
+    public String add(Model model) {
         model.addAttribute("meal", new Meal(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES), "", 1000));
         model.addAttribute("action", "add");
         return "mealForm";
     }
 
     @GetMapping("/delete")
-    public String deleteJsp(@RequestParam("id") String sid) {
+    public String delete(@RequestParam("id") String sid) {
         int id = Integer.parseInt(sid);
         delete(id);
         return "redirect:/meals";
     }
 
     @GetMapping("/filter")
-    public String getFilteredJsp(Model model,
+    public String getFiltered(Model model,
                                  @RequestParam(value = "startDate", required = false) String startDate,
                                  @RequestParam(value = "endDate", required = false) String endDate,
                                  @RequestParam(value = "startTime", required = false) String startTime,
@@ -72,7 +72,7 @@ public class JspMealController extends AbstractMealController {
     }
 
     @PostMapping("")
-    public String createJsp(HttpServletRequest request) {
+    public String create(HttpServletRequest request) {
         Meal meal = new Meal(
                 LocalDateTime.parse(request.getParameter("dateTime")),
                 request.getParameter("description"),

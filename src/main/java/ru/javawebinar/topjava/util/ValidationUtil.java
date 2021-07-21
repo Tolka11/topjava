@@ -62,9 +62,9 @@ public class ValidationUtil {
     }
 
     // JDBC validation
-    public static <T> void jdbcValidation(T obj) {
+    public static <T> void validate(T obj) {
         Set<ConstraintViolation<T>> objectViolations = validator.validate(obj);
-        if (objectViolations.size() != 0) {
+        if (!objectViolations.isEmpty()) {
             throw new ConstraintViolationException(objectViolations);
         }
     }

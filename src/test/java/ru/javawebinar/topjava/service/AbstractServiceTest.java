@@ -27,9 +27,6 @@ import static ru.javawebinar.topjava.util.ValidationUtil.getRootCause;
 @ActiveProfiles(resolver = ActiveDbProfileResolver.class)
 public abstract class AbstractServiceTest {
 
-    @Autowired
-    protected Environment environment;
-
     @ClassRule
     public static ExternalResource summary = TimingRules.SUMMARY;
 

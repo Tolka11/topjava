@@ -2,6 +2,7 @@ package ru.javawebinar.topjava.repository.jdbc;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.*;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -52,7 +53,7 @@ public class JdbcUserRepository implements UserRepository {
     public User save(User user) {
         BeanPropertySqlParameterSource parameterSource = new BeanPropertySqlParameterSource(user);
 
-        ValidationUtil.jdbcValidation(user);
+        ValidationUtil.validate(user);
 
         if (user.isNew()) {
             Number newKey = insertUser.executeAndReturnKey(parameterSource);
@@ -96,7 +97,7 @@ public class JdbcUserRepository implements UserRepository {
         List<User> users = jdbcTemplate.query(
                 "SELECT u.*, ur.role AS roles FROM users u LEFT JOIN user_roles ur ON u.id = ur.user_id WHERE id=?",
                 userExtractor, id);
-        return users.size() == 0 ? null : users.get(0);
+        return DataAccessUtils.singleResult(users);
     }
 
     @Override
@@ -104,7 +105,7 @@ public class JdbcUserRepository implements UserRepository {
         List<User> users = jdbcTemplate.query(
                 "SELECT u.*, ur.role AS roles FROM users u LEFT JOIN user_roles ur ON u.id = ur.user_id WHERE email=?",
                 userExtractor, email);
-        return users.size() == 0 ? null : users.get(0);
+        return DataAccessUtils.singleResult(users);
     }
 
     @Override
@@ -115,23 +116,23 @@ public class JdbcUserRepository implements UserRepository {
         return users;
     }
 
-    // My User extractor to list
-    private class UserExtractor implements ResultSetExtractor<List<User>> {
+    // User extractor to list
+    private static class UserExtractor implements ResultSetExtractor<List<User>> {
         @Override
-        public List<User> extractData(ResultSet rs)
-                throws SQLException, DataAccessException {
+        public List<User> extractData(ResultSet rs) throws SQLException, DataAccessException {
             Map<Integer, User> userMap = new LinkedHashMap<>();
             while (rs.next()) {
                 Integer id = rs.getInt("id");
-                // Using "putIfAbsent" for prevent several creations of User in map
-                userMap.putIfAbsent(id, ROW_MAPPER.mapRow(rs, rs.getRow()));
+                if (userMap.get(id) == null) {
+                    userMap.put(id, ROW_MAPPER.mapRow(rs, rs.getRow()));
+                }
                 String roleName = rs.getString("roles");
                 if (roleName != null) {
                     Role role = Role.valueOf(roleName);
                     userMap.get(id).getRoles().add(role);
                 }
             }
-            return userMap.values().stream().collect(Collectors.toList());
+            return new ArrayList<>(userMap.values());
         }
     }
 }

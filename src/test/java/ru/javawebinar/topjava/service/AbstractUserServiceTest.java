@@ -1,6 +1,5 @@
 package ru.javawebinar.topjava.service;
 
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -21,18 +20,12 @@ import java.util.Set;
 import static org.junit.Assert.assertThrows;
 import static ru.javawebinar.topjava.UserTestData.*;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractUserServiceTest extends AbstractServiceTest {
 
     @Autowired
     protected UserService service;
 
     private CacheManager cacheManager = new NoOpCacheManager();
-
-    @Before
-    public void setup() {
-        cacheManager.getCache("users").clear();
-    }
 
     @Test
     public void create() {
@@ -75,7 +68,7 @@ public abstract class AbstractUserServiceTest extends AbstractServiceTest {
     }
 
     @Test
-    public void a2get() {
+    public void get() {
         User user = service.get(USER_ID);
         MATCHER.assertMatch(user, UserTestData.user);
     }
@@ -92,7 +85,7 @@ public abstract class AbstractUserServiceTest extends AbstractServiceTest {
     }
 
     @Test
-    public void a1update() {
+    public void update() {
         User updated = getUpdated();
         service.update(updated);
         MATCHER.assertMatch(service.get(USER_ID), getUpdated());
