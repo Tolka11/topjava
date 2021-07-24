@@ -1,6 +1,5 @@
 package ru.javawebinar.topjava.web.meal;
 
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +10,6 @@ import ru.javawebinar.topjava.to.MealTo;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -54,20 +52,15 @@ public class MealRestController extends AbstractMealController {
         super.update(meal, id);
     }
 
+    @Override
     @GetMapping("/between")
-    public List<MealTo> getBetweenByRest(
-                       @RequestParam(value = "startDate", required = false)
-                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-                       @RequestParam(value = "startTime", required = false)
-                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-                       @RequestParam(value = "endDate", required = false)
-                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-                       @RequestParam(value = "endTime", required = false)
-                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
-        LocalDate sDate = startDate.toLocalDate() == null ? LocalDate.MIN : startDate.toLocalDate();
-        LocalTime sTime = startTime.toLocalTime() == null ? LocalTime.MIN : startTime.toLocalTime();
-        LocalDate eDate = endDate.toLocalDate() == null ? LocalDate.MAX : startDate.toLocalDate();
-        LocalTime eTime = endTime.toLocalTime() == null ? LocalTime.MAX : endTime.toLocalTime();
-        return super.getBetween(sDate, sTime, eDate, eTime);
+    public List<MealTo> getBetween(@RequestParam(value = "startDate", required = false) LocalDate startDate,
+                                   @RequestParam(value = "startTime", required = false) LocalTime startTime,
+                                   @RequestParam(value = "endDate", required = false) LocalDate endDate,
+                                   @RequestParam(value = "endTime", required = false) LocalTime endTime) {
+        return super.getBetween(startDate == null ? LocalDate.MIN : startDate,
+                startTime == null ? LocalTime.MIN : startTime,
+                endDate == null ? LocalDate.MAX : endDate,
+                endTime == null ? LocalTime.MAX : endTime);
     }
 }

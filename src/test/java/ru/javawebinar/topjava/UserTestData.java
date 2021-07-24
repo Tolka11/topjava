@@ -1,11 +1,15 @@
 package ru.javawebinar.topjava;
 
+import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.model.Role;
 import ru.javawebinar.topjava.model.User;
 
+import java.time.Month;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
+import static java.time.LocalDateTime.of;
 import static ru.javawebinar.topjava.model.AbstractBaseEntity.START_SEQ;
 
 public class UserTestData {
@@ -17,6 +21,8 @@ public class UserTestData {
 
     public static final User user = new User(USER_ID, "User", "user@yandex.ru", "password", Role.USER);
     public static final User admin = new User(ADMIN_ID, "Admin", "admin@gmail.com", "admin", Role.ADMIN, Role.USER);
+    public static final User adminWithMeal = new User(admin, List.of((new Meal(100009, of(2020, Month.JANUARY, 31, 14, 0), "Админ ланч", 510)),
+                                                                    (new Meal(100010, of(2020, Month.JANUARY, 31, 21, 0), "Админ ужин", 1500))));
 
     public static User getNew() {
         return new User(null, "New", "new@gmail.com", "newPass", 1555, false, new Date(), Collections.singleton(Role.USER));
