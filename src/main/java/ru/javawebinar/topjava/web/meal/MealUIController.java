@@ -2,18 +2,21 @@ package ru.javawebinar.topjava.web.meal;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.to.MealTo;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
 @RequestMapping(value = MealUIController.UI_URL, produces = MediaType.APPLICATION_JSON_VALUE)
 public class MealUIController extends AbstractMealController {
 
-    static final String UI_URL = "/meals";
+    static final String UI_URL = "/ui/meals";
 
     @Override
     @GetMapping("/{id}")
@@ -41,6 +44,16 @@ public class MealUIController extends AbstractMealController {
                        @RequestParam int calories) {
         LocalDateTime ldt = LocalDateTime.parse(dateTime.replace(" ", "T"));
         super.create(new Meal(ldt, description, calories));
+    }
+
+    @Override
+    @GetMapping("/filter")
+    public List<MealTo> getBetween(
+            @RequestParam @Nullable LocalDate startDate,
+            @RequestParam @Nullable LocalTime startTime,
+            @RequestParam @Nullable LocalDate endDate,
+            @RequestParam @Nullable LocalTime endTime) {
+        return super.getBetween(startDate, startTime, endDate, endTime);
     }
 }
 
