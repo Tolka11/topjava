@@ -65,7 +65,12 @@ $(function () {
                     0,
                     "asc"
                 ]
-            ]
+            ],
+            "createdRow": function (row, data, dataIndex) {
+                if (!data.enabled) {
+                    $(row).attr("data-userEnabled", false);
+                }
+            }
         })
     );
 });
