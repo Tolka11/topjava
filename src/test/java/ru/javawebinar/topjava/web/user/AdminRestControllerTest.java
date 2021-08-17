@@ -5,12 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import ru.javawebinar.topjava.UserTestData;
 import ru.javawebinar.topjava.model.User;
 import ru.javawebinar.topjava.service.UserService;
 import ru.javawebinar.topjava.util.exception.NotFoundException;
 import ru.javawebinar.topjava.web.AbstractControllerTest;
-import ru.javawebinar.topjava.web.json.JsonUtil;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -91,10 +89,21 @@ class AdminRestControllerTest extends AbstractControllerTest {
         perform(MockMvcRequestBuilders.put(REST_URL + USER_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .with(userHttpBasic(admin))
-                .content(JsonUtil.writeValue(updated)))
+                .content(jsonWithPassword(updated, "newPass")))
                 .andExpect(status().isNoContent());
 
         MATCHER.assertMatch(userService.get(USER_ID), updated);
+    }
+
+    @Test
+    void notValidUpdate() throws Exception {
+        User updated = getUpdated();
+        updated.setName("");
+        perform(MockMvcRequestBuilders.put(REST_URL + USER_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(userHttpBasic(admin))
+                .content(jsonWithPassword(updated, "newPass")))
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
@@ -111,6 +120,17 @@ class AdminRestControllerTest extends AbstractControllerTest {
         newUser.setId(newId);
         MATCHER.assertMatch(created, newUser);
         MATCHER.assertMatch(userService.get(newId), newUser);
+    }
+
+    @Test
+    void notValidCreate() throws Exception {
+        User newUser = getNew();
+        newUser.setEmail(null);
+        ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(userHttpBasic(admin))
+                .content(jsonWithPassword(newUser, "newPass")))
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test

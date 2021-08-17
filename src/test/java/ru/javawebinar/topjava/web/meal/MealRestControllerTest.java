@@ -81,6 +81,16 @@ class MealRestControllerTest extends AbstractControllerTest {
     }
 
     @Test
+    void notValidUpdate() throws Exception {
+        Meal updated = getUpdated();
+        updated.setDescription("");
+        perform(MockMvcRequestBuilders.put(REST_URL + MEAL1_ID).contentType(MediaType.APPLICATION_JSON)
+                .with(userHttpBasic(user))
+                .content(JsonUtil.writeValue(updated)))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
     void createWithLocation() throws Exception {
         Meal newMeal = getNew();
         ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
@@ -93,6 +103,17 @@ class MealRestControllerTest extends AbstractControllerTest {
         newMeal.setId(newId);
         MATCHER.assertMatch(created, newMeal);
         MATCHER.assertMatch(mealService.get(newId, USER_ID), newMeal);
+    }
+
+    @Test
+    void notValidCreate() throws Exception {
+        Meal newMeal = getNew();
+        newMeal.setDescription("");
+        ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(userHttpBasic(user))
+                .content(JsonUtil.writeValue(newMeal)))
+                .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
