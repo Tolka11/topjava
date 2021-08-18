@@ -8,10 +8,20 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import ru.javawebinar.topjava.model.Meal;
 import ru.javawebinar.topjava.service.MealService;
+import ru.javawebinar.topjava.util.ValidationUtil;
 import ru.javawebinar.topjava.util.exception.NotFoundException;
 import ru.javawebinar.topjava.web.AbstractControllerTest;
 import ru.javawebinar.topjava.web.json.JsonUtil;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
+import java.time.LocalDateTime;
+import java.time.Month;
+
+import static org.assertj.core.api.Fail.fail;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -29,6 +39,9 @@ class MealRestControllerTest extends AbstractControllerTest {
 
     @Autowired
     private MealService mealService;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     @Test
     void get() throws Exception {
@@ -88,6 +101,23 @@ class MealRestControllerTest extends AbstractControllerTest {
                 .with(userHttpBasic(user))
                 .content(JsonUtil.writeValue(updated)))
                 .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void sameDateTimeUpdate() throws Exception {
+        Meal updated = getUpdated();
+        updated.setDateTime(LocalDateTime.of(2020, Month.JANUARY, 30, 20, 0));
+        try {
+            perform(MockMvcRequestBuilders.put(REST_URL + MEAL1_ID).contentType(MediaType.APPLICATION_JSON)
+                    .with(userHttpBasic(user))
+                    .content(JsonUtil.writeValue(updated)));
+            entityManager.flush();
+        } catch (PersistenceException ex) {
+            String rootCause = ValidationUtil.getRootCause(ex).toString();
+            assertThat(rootCause, containsString("meals_unique_user_datetime_idx"));
+            return;
+        }
+        fail("expected PersistenceException for existing date/time");
     }
 
     @Test

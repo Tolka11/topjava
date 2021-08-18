@@ -9,9 +9,17 @@ import ru.javawebinar.topjava.model.User;
 import ru.javawebinar.topjava.service.UserService;
 import ru.javawebinar.topjava.to.UserTo;
 import ru.javawebinar.topjava.util.UserUtil;
+import ru.javawebinar.topjava.util.ValidationUtil;
 import ru.javawebinar.topjava.web.AbstractControllerTest;
 import ru.javawebinar.topjava.web.json.JsonUtil;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
+
+import static org.assertj.core.api.Fail.fail;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,6 +31,9 @@ class ProfileRestControllerTest extends AbstractControllerTest {
 
     @Autowired
     private UserService userService;
+
+    @PersistenceContext
+    EntityManager entityManager;
 
     @Test
     void get() throws Exception {
@@ -73,6 +84,23 @@ class ProfileRestControllerTest extends AbstractControllerTest {
                 .content(JsonUtil.writeValue(newTo)))
                 .andDo(print())
                 .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void doubleEmailRegister() throws Exception {
+        UserTo newTo = new UserTo(null, "newName", "user@yandex.ru", "newPassword", 1500);
+        User newUser = UserUtil.createNewFromTo(newTo);
+        try {
+            ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(JsonUtil.writeValue(newTo)));
+            entityManager.flush();
+        } catch (PersistenceException ex) {
+            String rootCause = ValidationUtil.getRootCause(ex).toString();
+            assertThat(rootCause, containsString("users_unique_email_idx"));
+            return;
+        }
+        fail("expected PersistenceException for existing email");
     }
 
     @Test
